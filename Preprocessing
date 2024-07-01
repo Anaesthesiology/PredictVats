@@ -1,0 +1,191 @@
+# Setup ----
+## Cleanup ----
+rm(list=ls()) #Remove any old data loaded
+graphics.off() #remove any old graphics loaded
+options(scipen = 999) # Changes p-values from scientific to numeric
+options(max.print = 1000000) # Makes you print a list w/o an upper limit. Otherwise might overload the computer
+
+## Load libraries ----
+# NB: read about packages on google, github, cran etc.
+library(data.table) #to change from df to dt. a faster way to handle data.
+library(tidyverse) #for easier data corrections 
+library(cprr) #to calculate age from CPR number
+library(DescTools) #area under the curve
+library(Publish) #for univariate table/"table 1"
+library(writexl) #to export results in excel documents
+library(broom) #for the function tidy which prepares the data for visualisation
+library(ggplot2) #Plotting correlation betweeen outcomes
+library(ggridges)#Plotting comprehensive plot of pain scores.
+
+## Define working directory ----
+setwd("Name of fileplacement")
+
+# Data loading ----
+data = read.csv('Name of data sheet')
+patientdata <- setDT(data)
+patientdata <- patientdata %>%
+  rename_all(tolower)
+
+# Data clean up ----
+## Remove excluded patients ----
+patientdata <- patientdata %>%
+  filter(patientdata$exclusion___0 == 1)
+
+## Correcting date formats ----
+patientdata$op_date <- as.POSIXct(patientdata$op_date, format = "%Y-%m-%d  %H:%M", tz = "CET")
+patientdata$end_of_surgery <- as.POSIXct(patientdata$end_of_surgery, format = "%Y-%m-%d  %H:%M", tz = "CET")
+patientdata$drain_removal <- as.POSIXct(patientdata$drain_removal, format = "%Y-%m-%d  %H:%M", tz = "CET")
+patientdata$discharge_date <- as.POSIXct(patientdata$discharge_date, format = "%Y-%m-%d  %H:%M", tz = "CET")
+patientdata$time_painscore_1 <- as.POSIXct(patientdata$time_painscore_1, format = "%Y-%m-%d  %H:%M", tz = "CET")
+patientdata$time_painscore_2 <- as.POSIXct(patientdata$time_painscore_2, format = "%Y-%m-%d  %H:%M", tz = "CET")
+patientdata$time_painscore_3 <- as.POSIXct(patientdata$time_painscore_3, format = "%Y-%m-%d  %H:%M", tz = "CET")
+patientdata$time_painscore_4 <- as.POSIXct(patientdata$time_painscore_4, format = "%Y-%m-%d  %H:%M", tz = "CET")
+patientdata$time_painscore_5 <- as.POSIXct(patientdata$time_painscore_5, format = "%Y-%m-%d  %H:%M", tz = "CET")
+patientdata$first_opioid_admin <- as.POSIXct(patientdata$first_opioid_admin, format = "%Y-%m-%d  %H:%M", tz = "CET")
+patientdata$tid_fuld_mob <- as.POSIXct(patientdata$tid_fuld_mob, format = "%Y-%m-%d  %H:%M", tz = "CET")
+
+## Factorial variables ----
+patientdata$asa.factor = factor(patientdata$asa,levels = c("1","2","3","4"))
+patientdata$sex.factor = factor(patientdata$sex,levels = c("1","2"))
+patientdata$smoke.factor = factor(patientdata$smoke,levels = c("1","2","3","4","5","9"))
+
+## Correcting HADS ----
+#The score was coded wrongly in the codebook so the values needs to be changed to match the scoring of HADS
+patientdata <- patientdata %>% mutate_at(c("hads1","hads2","hads4","hads5","hads6","hads7","hads8","hads9","hads10","hads11","hads12","hads13","hads14"), as.numeric)
+### HADS-D. The scores are 1-4 and not 0-3. For each column 1 is subtracted: 
+patientdata <- patientdata %>%
+  mutate(across(c("hads2","hads4","hads7","hads9","hads12","hads14"), ~ . - 1))
+
+#HADS-A. The score is 1-4 and no 3-0. So we need to invert the scorings and subtract 1. This is done by subtracting the wrong score from 4. I.e. 4-4=0, 4-3=1, 4-2=2
+patientdata[,c("hads1","hads5","hads6","hads8","hads10","hads11","hads13")] <- 4 - patientdata[,c("hads1","hads5","hads6","hads8","hads10","hads11","hads13")]
+
+#At the end, HADS_3 needs to be changes separately because of a mistake in redcap.
+patientdata <- patientdata %>%
+  mutate(hads3 = case_when(
+    hads3 == "1" ~ 3,
+    hads3 == "Ja" ~ 2,
+    hads3 == "2" ~ 1,
+    hads3 == "3" ~ 0,
+    TRUE ~ 100
+  ))
+
+# Calculated variables ----
+### Demographic variables ----
+#Age is calculated from patients civil registration number. 
+patientdata$cpr <- str_pad(patientdata$cpr,10, pad = "0")
+patientdata$age <- age(patientdata$cpr, patientdata$op_date)
+
+## CFS. Coded one below actual value
+patientdata$cfs <- patientdata$cfs+1
+
+## BMI is caluclated from height and weight. 
+patientdata$bmi <- patientdata$weight/(patientdata$height/100*patientdata$height/100)
+
+## grouping pre medication. 
+patientdata$pre_opioid <- ifelse(patientdata$pre_analgesic___4 == 1, 1, ifelse(patientdata$pre_analgesic___5,1,ifelse(patientdata$pre_analgesic___7 == 1,1,ifelse(patientdata$pre_analgesic___8 == 1,1,0))))
+patientdata$pre_neurop <- ifelse(patientdata$pre_analgesic___3 == 1,1,ifelse(patientdata$pre_analgesic___6,1,0))
+
+## Combining the variables for each surgery type into one variable of the most invasive kind of surgery. 
+patientdata$optype_highest <- ifelse(patientdata$operation_type___4 == 1, 4, ifelse(patientdata$operation_type___1 == 1, 3, ifelse(patientdata$operation_type___2,2, ifelse(patientdata$operation_type___3,1,0))))
+patientdata$optype_highest.factor <- as.factor(patientdata$optype_highest)
+
+## Any pain
+patientdata$any_pain <- ifelse(patientdata$bpi4 == 0, 0,1)
+
+### Time differences ----
+patientdata$sugerytime <- difftime(patientdata$end_of_surgery, patientdata$op_date,units = "mins")
+patientdata$draintime <- difftime(patientdata$drain_removal,patientdata$end_of_surgery,units = "days")
+patientdata$admission_time <- difftime(patientdata$discharge_date,patientdata$op_date,units = "days")
+
+patientdata$sugerytime <- as.numeric(patientdata$sugerytime)
+patientdata$draintime <- as.numeric(patientdata$draintime)
+patientdata$admission_time <- as.numeric(patientdata$admission_time)
+
+## Oncology ----
+
+## A new variable for location of primary cancer is made. If the origin is pulmonary (i.e., no location given in cancer_type_2) the tumor can be eiter pulmonary cancer or benign, else the original location from cancer_type_2
+patientdata$cancer_location <- as.factor(ifelse(is.na(patientdata$cancer_type_2),ifelse(patientdata$cancer_type___6 == 1,7,8),patientdata$cancer_type_2))
+## A binary variable on whether the cancer is of pulmonary origin or not. 
+patientdata$lungcancer <- ifelse(patientdata$cancer_lung == 2,1,0)
+## A binary variable on whether it is malignant or benign. 
+patientdata$malignancy <- ifelse(patientdata$cancer_type___6 == 1,0,1)
+## Cancer type. Condenced from many columns to one. 1: Adeno, 2: PCC, 3: Largecell, 4: small cell, 5: carcinoid, 6: non pulmonary, 7 benign, 8 pleomorph, 9 error
+patientdata <- patientdata %>%
+  mutate( cancer_type = case_when(
+    cancer_type___1 == 1 ~ 1,
+    cancer_type___2 == 1 ~ 2,
+    cancer_type___3 == 1 ~ 3,
+    cancer_type___4 == 1 ~ 4,
+    cancer_type___7 == 1 ~ 5,
+    cancer_type___5 == 1 ~ 6,
+    cancer_type___6 == 1 ~ 7,
+    cancer_type___8 == 1 ~ 8,
+    TRUE ~ 9
+  ))
+
+## Staging. First step is TNM classifying the matastatis to M1c
+patientdata$tnm_m <- ifelse(!is.na(patientdata$cancer_type_2),2,patientdata$tnm_m)
+#Afterwards, the stage is calculated based on the eighth edition of the ajcc cancer staging manual. Done using the Danish lung cancer group manual: https://www.lungecancer.dk/wp-content/uploads/2018/09/Stadieinddeling-lungekr%C3%A6ft.pdf
+#Substages are converted from letters to number (e.g., IB being stage 1.5, IIIC being stage 3.6666). Stage I as IA=1, IA2=1/6, 1A3=2/6, IB=1.5, 
+patientdata <- patientdata %>%
+  mutate( stage = case_when(
+    tnm_m > 1 ~ 4, #IVA
+    tnm_n == 5 & tnm_t > 10 ~ 3+(2/3), #IIIC
+    tnm_n == 5 & tnm_t < 11 ~ 3+(1/3), #IIIB
+    tnm_n == 4 & tnm_t > 10 ~ 3+(1/3), #IIIB
+    tnm_n == 4 & tnm_t < 11 ~ 3,       #IIIA
+    tnm_n == 3 & tnm_t > 10 ~ 3,       #IIIA
+    tnm_n == 3 & tnm_t < 11 ~ 2.5,     #IIB
+    tnm_n == 2 & tnm_t == 12 ~ 3,      #IIIA
+    tnm_n == 2 & tnm_t == 11 ~ 2.5,    #IIB
+    tnm_n == 2 & tnm_t == 10 ~ 2,      #IIA
+    tnm_n == 2 & tnm_t == 9 ~ 1.5,     #IB
+    tnm_n == 2 & tnm_t == 7 ~ 1+(1/3), #IA3
+    tnm_n == 2 & tnm_t == 6 ~ 1+(1/6), #IA2
+    tnm_n == 2 & tnm_t == 5 ~ 1,       #IA1
+    tnm_n == 2 & tnm_t == 1 ~ 0,       #0
+    cancer_type___6 == 1 ~ 0,          #Benign = 0 
+    TRUE ~ 100
+  ))
+
+## Psychological Factors ----
+## HADS-A
+patientdata$hads_a <- patientdata$hads1 + patientdata$hads3 + patientdata$hads5 + patientdata$hads7 + patientdata$hads9 + patientdata$hads11 + patientdata$hads13
+## HADS-D
+patientdata$hads_d <- patientdata$hads2 + patientdata$hads4 + patientdata$hads6 + patientdata$hads8 + patientdata$hads10 + patientdata$hads12 + patientdata$hads14
+## HADS total
+patientdata$hads <- patientdata$hads_a + patientdata$hads_d
+
+##PCS
+patientdata$pcs_total <- patientdata$pcs1 + patientdata$pcs2 + patientdata$pcs3 + patientdata$pcs4 + patientdata$pcs5 + patientdata$pcs6 + patientdata$pcs7 + patientdata$pcs8 + patientdata$pcs9 + patientdata$pcs10 + patientdata$pcs11 + patientdata$pcs12 + patientdata$pcs13
+
+## QST (CPM, TSP) ----
+### TSP
+patientdata$tsp_score <- (patientdata$tsp8 + patientdata$tsp9 + patientdata$tsp10)/3 - (patientdata$tsp1 + patientdata$tsp2 + patientdata$tsp3)/3
+
+### CPM
+patientdata$cpm_score <- patientdata$cpm2 - patientdata$pdt1
+
+# Outcomes ----
+## Opioid dosis ----
+#Opioid at the PACu is combined with opioid at the ward
+patientdata$total_opioid <- patientdata$opioid2 + patientdata$opioid4
+#total dose divided by patient weight
+patientdata$opioid_kg <- patientdata$total_opioid/patientdata$weight
+
+## NRS AUC ----
+for (i in 1:nrow(patientdata)) {
+  time1 <- difftime(patientdata$time_painscore_1[i], patientdata$end_of_surgery[i],units = "days")
+  time2 <- difftime(patientdata$time_painscore_2[i], patientdata$end_of_surgery[i],units = "days")
+  time3 <- difftime(patientdata$time_painscore_3[i], patientdata$end_of_surgery[i],units = "days")
+  time4 <- difftime(patientdata$time_painscore_4[i], patientdata$end_of_surgery[i],units = "days")
+  time5 <- difftime(patientdata$time_painscore_5[i], patientdata$end_of_surgery[i],units = "days")
+  time6 <- patientdata$admission_time[i]
+  auc_df <- data.table( #Makes a dt with time from end of surgery to 100 days after surgery. The 100 day trailing is done to account for the patients that are discharged withing 48 hours of surgery. 
+    time = c(0, time1, time2, time3, time4, time5, time6, 100),
+    score = c(0, patientdata$nrs_rest_1[i],patientdata$nrs_rest_2[i],patientdata$nrs_rest_3[i],patientdata$nrs_rest_4[i],patientdata$nrs_rest_5[i],0,0)
+  ) #The patients are assumed to be pain free upon discharge. 
+  auc <- AUC(x = auc_df$time, y = auc_df$score, na.rm = TRUE, to = 2 )
+  patientdata$mean_pain_rest[i] <- ifelse(all(is.na(auc_df$score[2:6])) ,NA,auc)
+}
+
