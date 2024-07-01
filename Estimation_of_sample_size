@@ -1,0 +1,11 @@
+#Sample size is calculated according to methods from Cohen 1988, Example 9.16. page 446.
+#Its an iterative process where each step gets closer to the expected sample size
+#Estimation done with the following assumptions:  Power=0.9, alpha=0.05, u = 10 (predictors) and expected r2 of 0.2.
+#Using table 9.4.2 (page 452) lambda is is found to be 22.1
+#Using the equation 
+n1 <- (22.1*(1-0.2))/0.2 #Equals 88.4. Which then subtracs u(i.e., 10) and 1 = 77. Which is far from 120 (from the lambda table), and hence reiteration is needed
+#First, lambda is calculated using formula 9.4.2 on page 445. 
+lambda <- 23.8 - (1/60 - 1/77)/(1/60 - 1/120)*(23.8 - 22.1)
+#This new lambda can be used to recalculate the n
+n2 <- (lambda*(1 - 0.2))/0.2 #92 No great change, and hence no further reiteration needed but lambda is recalculated to be sure. 
+lambda2 <- 23.8 - (1/60 - 1/n2)/(1/60 - 1/120)*(23.8 - lambda) #Lambda changes from 23.05 to 23.28, which is a 1% change and therefore we accept the estimate of 92
