@@ -135,16 +135,6 @@ write_xlsx(summary(table2), "table2.xlsx") #Exporting tables as excel
 
 ## Multiple linear regression ----
 ### Function to ease backward elimination ----
-# Function to change the summary of the model to sort the variables according to the p-value of each variable.
-sortmodel <- function(original_model){
-  index <- order(coef(summary(original_model))[,4])  # sort out the p-values
-  print(coef(summary(original_model))[index,])       # reorder coef, SE, etc. by increasing p
-  print("r^2:")
-  print(summary(original_model)$r.squared)
-  print("adj. r^2")
-  print(summary(original_model)$adj.r.squared)
-}
-
 elimination <- function(data,vector_of_predictors,outcome,exclusion_criteria) {
   #Gives an error and exits the function if the inputted outcome is not in the data frame 
   if (!(exists(outcome, where = data))){
