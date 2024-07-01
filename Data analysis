@@ -1,0 +1,391 @@
+# To plot all figures and export directly to pdf:  
+pdf("Normality_plots.pdf") #The figures are printed using a statement at the end of the code. 
+
+## Normality ---- 
+#Variables are tested for normality using histograms, qqplots and shapiro wilks test. 
+### Demographics ----
+hist(patientdata$age, main = "Age") #Slight left skew
+qqnorm(patientdata$age, main = "Age") 
+qqline(patientdata$age)
+shapiro.test(patientdata$age) #<0.05
+
+hist(patientdata$bmi, main = "BMI") #Very slight right skew
+qqnorm(patientdata$bmi, main = "BMI") 
+qqline(patientdata$bmi) #Normal
+shapiro.test(patientdata$bmi) #0.26 - normal
+
+hist(patientdata$ps, main = "PS") #Right skew
+qqnorm(patientdata$ps, main = "PS") 
+qqline(patientdata$ps) 
+shapiro.test(patientdata$ps) #<0.05
+
+hist(patientdata$gfr, main = "eGFR") #Left skew
+qqnorm(patientdata$gfr, main = "eGFR") 
+qqline(patientdata$gfr) #Slight Skew
+shapiro.test(patientdata$gfr) #<0.05
+
+hist(patientdata$bpi4, main = "BPI") #Right skew
+qqnorm(patientdata$bpi4, main = "BPI") 
+qqline(patientdata$bpi4) 
+shapiro.test(patientdata$bpi4) #<0.05
+
+### Perioperative ----
+hist(patientdata$draintime, main = "Draintime") #Right skew
+qqnorm(patientdata$draintime, main = "Draintime") 
+qqline(patientdata$draintime) 
+shapiro.test(patientdata$draintime) #<0.05
+
+hist(patientdata$optype_highest, main = "Surgery Type") #Categorical
+qqnorm(patientdata$optype_highest, main = "Surgery Type") 
+qqline(patientdata$optype_highest) 
+shapiro.test(patientdata$optype_highest) #<0.05
+
+hist(patientdata$sugerytime, main = "Surgery Time") #Bell curve
+qqnorm(patientdata$sugerytime, main = "Surgery Time") 
+qqline(patientdata$sugerytime) #Normal
+shapiro.test(patientdata$sugerytime) #p=0.08 - Normal 
+
+hist(patientdata$io_toradol, main = "IO Ketorolac") #Categorical
+qqnorm(patientdata$io_toradol, main = "IO Ketorolac") 
+qqline(patientdata$io_toradol) 
+shapiro.test(patientdata$io_toradol) #<0.05
+
+hist(patientdata$io_fentanyl, main = "IO Fentanyl") #Right skew
+qqnorm(patientdata$io_fentanyl, main = "IO Fentanyl") 
+qqline(patientdata$io_fentanyl) 
+shapiro.test(patientdata$io_fentanyl) #<0.05
+
+### Psychologic factors ----
+hist(patientdata$pcs_total, main = "PCS") #Right skewed
+qqnorm(patientdata$pcs_total, main = "PCS") 
+qqline(patientdata$pcs_total) 
+shapiro.test(patientdata$pcs_total) #<0.05
+
+hist(patientdata$hads_a, main = "HADS-a") #Stochastic
+qqnorm(patientdata$hads_a, main = "HADS-a") 
+qqline(patientdata$hads_a) 
+shapiro.test(patientdata$hads_a) #<0.05
+
+hist(patientdata$hads_d, main = "HADS-d") #Bell curve
+qqnorm(patientdata$hads_d, main = "HADS-d") 
+qqline(patientdata$hads_d) 
+shapiro.test(patientdata$hads_d) #<0.05
+
+### QST ----
+hist(patientdata$pdt1, main = "PDT")#Right skew
+qqnorm(patientdata$pdt1, main = "PDT")
+qqline(patientdata$pdt1)
+shapiro.test(patientdata$pdt1)#<0.05
+
+hist(patientdata$ptt1, main = "PTT")#Right skew
+qqnorm(patientdata$ptt1, main = "PTT")
+qqline(patientdata$ptt1)
+shapiro.test(patientdata$ptt1)#<0.05
+
+hist(patientdata$tsp_score, main = "TSP") #Right skew
+qqnorm(patientdata$tsp_score, main = "TSP")
+qqline(patientdata$tsp_score)
+shapiro.test(patientdata$tsp_score)#<0.05
+
+hist(patientdata$cpm_score, main = "CPM") #Right skew
+qqnorm(patientdata$cpm_score, main = "CPM") 
+qqline(patientdata$cpm_score) #Slight skewed 
+shapiro.test(patientdata$cpm_score)#<0.05
+
+### Oncology  ----
+hist(patientdata$stage, main = "Cancer stage")
+qqnorm(patientdata$stage, main = "Cancer stage")
+qqline(patientdata$stage)
+shapiro.test(patientdata$stage) #<0.05
+
+### Outcomes ----
+hist(patientdata$opioid_kg, main = "Opioid.kg-1") #Right skewed
+qqnorm(patientdata$opioid_kg, main = "Opioid.kg-1")
+qqline(patientdata$opioid_kg) 
+shapiro.test(patientdata$opioid_kg) #p<0.05
+
+hist(patientdata$mean_pain_rest, main = "NRSAUC")#Right skewed
+qqnorm(patientdata$mean_pain_rest, main = "NRSAUC")
+qqline(patientdata$mean_pain_rest) #Slight Skewed
+shapiro.test(patientdata$mean_pain_rest) #p<0.05
+
+### Other variables to table 1 or 2 ----
+hist(patientdata$admission_time, main = "Admission Time") #heavy right skew
+qqnorm(patientdata$admission_time, main = "Admission Time") 
+qqline(patientdata$admission_time) 
+shapiro.test(patientdata$admission_time) #p<0.05
+
+#Only BMI and Surgery time is normal distributed. 
+dev.off() #To export figures.
+
+
+## Table 1, baseline ----
+table1 <- univariateTable(data = patientdata,~ age+sex.factor+bmi+smoke.factor+cfs+asa.factor+
+                            Q(bpi4)+any_pain+
+                            Q(pdt1)+Q(ptt1)+Q(tsp_score)+Q(cpm_score)+
+                            Q(pcs_total)+Q(hads_a)+Q(hads_d),Q.format = "median(x) [iqr(x)] (range(x))")
+summary(table1)
+write_xlsx(summary(table1), "table1.xlsx") #Exporting tables as excel
+
+## Tabel 2, perioperative ----
+table2 <- univariateTable(data = patientdata,~ sugerytime+optype_highest.factor+malignancy+Q(io_fentanyl)+
+                            Q(io_toradol)+Q(opioid_kg)+Q(mean_pain_rest) + Q(admission_time),Q.format = "median(x) [iqr(x)] (range(x))")
+summary(table2)
+write_xlsx(summary(table2), "table2.xlsx") #Exporting tables as excel
+
+## Multiple linear regression ----
+### Function to ease backward elimination ----
+# Function to change the summary of the model to sort the variables according to the p-value of each variable.
+sortmodel <- function(original_model){
+  index <- order(coef(summary(original_model))[,4])  # sort out the p-values
+  print(coef(summary(original_model))[index,])       # reorder coef, SE, etc. by increasing p
+  print("r^2:")
+  print(summary(original_model)$r.squared)
+  print("adj. r^2")
+  print(summary(original_model)$adj.r.squared)
+}
+
+elimination <- function(data,vector_of_predictors,outcome,exclusion_criteria) {
+  #Gives an error and exits the function if the inputted outcome is not in the data frame 
+  if (!(exists(outcome, where = data))){
+    return(paste("Error, ",outcome," not found in data",sep = ""))
+  }
+  predictors_vector <- vector_of_predictors #defines as a new vector inside the function 
+  worst.Predictor.p = 1 #To make the while loop run later in the function. Will be overwritten
+  #Defining a dataframe to store performance of the model before a while loop for elimination
+  performance_df <<- data.frame( 
+    R.Squared = 0,
+    Adj.R.Squared = 0,
+    number.predictors = 0,
+    Worst.Predictor.name = 0,
+    Worst.Predictor.p = 0
+  )
+  iteration <- 1 #Iteration variable is used to input the steps of the elimination in the right place in the dataframe.
+  
+  while (worst.Predictor.p>exclusion_criteria) { #A new round of elimination will run if the worst performing predictor has a p value above the exclusion criteria
+    variable_string <- paste(predictors_vector, collapse ="+") #The vector of predictors is converted to a string suitable for the formula
+    formula_for_model <- as.formula(paste(outcome,"~",variable_string,sep = "")) 
+    predictionmodel <<- lm(formula_for_model, #The model is defined globally to be used in further analyses
+                           data = data, 
+                           na.action = na.exclude)
+    index <- order(coef(summary(predictionmodel))[,4])  # Finds the index of p values from lowest to highest
+    coefs <- summary(predictionmodel)$coefficients # Finds the variables in the model and their values
+    coefs <- data.frame(coefs[order(coefs[,4],decreasing = TRUE),]) # Sorts the variables in the model from least to most significant 
+    worst <- coefs[1,]
+    worst.Predictor.name <- row.names(worst)
+    if (grepl(".factor2",worst.Predictor.name,fixed = TRUE )){
+      worst.Predictor.name <- gsub('.factor2', '.factor',worst.Predictor.name)
+    }
+    worst.Predictor.p <- coefs[1,4]
+    #In case the intercept is the least significant variable in the model, takes the second least significant variable, because we cant remove the intercept.
+    if (worst.Predictor.name == "(Intercept)") {
+      worst <- coefs[2,]
+      worst.Predictor.name <- row.names(worst)
+      worst.Predictor.p <- coefs[2,4]
+    }
+    #Inputs all the data on model performance of elimination in a dataframa accessable (<<-) globally
+    performance_df[iteration,] <<- data.frame(
+      R.Squared = summary(predictionmodel)$r.squared,
+      Adj.R.Squared = summary(predictionmodel)$adj.r.squared,
+      number.predictors = nrow(coefs)-1,
+      Worst.Predictor.name = worst.Predictor.name,
+      Worst.Predictor.p = worst.Predictor.p
+    )
+    predictors_vector <- predictors_vector[predictors_vector != worst.Predictor.name] #Removes the least significant variable
+    iteration <- iteration + 1 #Adds one to the iteration variable.
+  }
+  #Outputs the model summary and the performance dataframe.
+  print(summary(predictionmodel))
+  return(performance_df)
+}
+
+### Define variables for models ----
+qst_variables <- c("pdt1", "ptt1", "cpm_score", "tsp_score") 
+psychological_variables <- c("pcs_total", "hads_d", "hads_a")
+demographics_variables <- c("age", "bmi", "sex.factor", "ps", "gfr", "pre_opioid", "pre_neurop", "pre_analgesic___2", "bpi4")
+perioperative_variables <- c("draintime", "optype_highest", "sugerytime", "io_fentanyl", "io_toradol")
+tumour_variables <- c("cancer_lung", "stage", "cancer_type___1", "cancer_type___2", "cancer_type___3", "cancer_type___4", "cancer_type___5", "cancer_type___6", "cancer_type___7", "cancer_type___8")
+
+
+### NRS AUC ----
+#### Single-domain models ----
+model_nrs_qst <-            lm(as.formula(paste("mean_pain_rest ~ ",paste(qst_variables, collapse ="+"),sep = "")), data = patientdata[!is.na(patientdata$mean_pain_rest)],na.action = na.exclude)
+model_nrs_psychological <-  lm(as.formula(paste("mean_pain_rest ~ ",paste(psychological_variables, collapse ="+"),sep = "")), data = patientdata[!is.na(patientdata$mean_pain_rest)],na.action = na.exclude)
+model_nrs_demographic <-    lm(as.formula(paste("mean_pain_rest ~ ",paste(demographics_variables, collapse = "+"),sep = "")), data = patientdata[!is.na(patientdata$mean_pain_rest)],na.action = na.exclude)
+model_nrs_perioperative <-  lm(as.formula(paste("mean_pain_rest ~ ",paste(perioperative_variables, collapse = "+"),sep = "")), data = patientdata[!is.na(patientdata$mean_pain_rest)],na.action = na.exclude)
+model_nrs_tumour <-         lm(as.formula(paste("mean_pain_rest ~ ",paste(tumour_variables, collapse = "+"),sep = "")), data = patientdata[!is.na(patientdata$mean_pain_rest)],na.action = na.exclude)
+
+#### Condensed single-domain models ----
+pain_qst_single <- elimination(data = patientdata,vector_of_predictors = qst_variables,outcome = "mean_pain_rest",exclusion_criteria = 0.157)
+pain_qst_single_model <- predictionmodel
+pain_psychological_single <- elimination(data = patientdata,vector_of_predictors = psychological_variables,outcome = "mean_pain_rest",exclusion_criteria = 0.157)
+pain_psychological_single_model <- predictionmodel
+pain_demographic_single <- elimination(data = patientdata,vector_of_predictors = demographics_variables,outcome = "mean_pain_rest",exclusion_criteria = 0.157)
+pain_demographic_single_model <- predictionmodel
+pain_perioperative_single <- elimination(data = patientdata,vector_of_predictors = perioperative_variables,outcome = "mean_pain_rest",exclusion_criteria = 0.157)
+pain_perioperative_single_model <- predictionmodel
+pain_tumour_single <- elimination(data = patientdata,vector_of_predictors = tumour_variables,outcome = "mean_pain_rest",exclusion_criteria = 0.157)
+pain_tumour_single_model <- predictionmodel
+
+#### Combined model ----
+pain_qst_variables_condensed <- all.vars(formula(pain_qst_single_model))[2:10]
+pain_psychological_variables_condensed <- all.vars(formula(pain_psychological_single_model))[2:10]
+pain_demographics_variables_condensed <- all.vars(formula(pain_demographic_single_model))[2:10]
+pain_perioperative_variables_condensed <- all.vars(formula(pain_perioperative_single_model))[2:10]
+pain_tumour_variables_condensed <- all.vars(formula(pain_tumour_single_model))[2:10]
+
+combined_pain_variables <- na.omit(c(pain_qst_variables_condensed,
+                                     pain_psychological_variables_condensed,
+                                     pain_demographics_variables_condensed,
+                                     pain_perioperative_variables_condensed,
+                                     pain_tumour_variables_condensed))
+
+pain_combined <- lm(as.formula(paste("mean_pain_rest ~ ",paste(combined_pain_variables, collapse ="+"),sep = "")), data = patientdata[!is.na(patientdata$mean_pain_rest)],na.action = na.exclude)
+
+#### Final model ----
+pain_final <- elimination(data = patientdata,vector_of_predictors = combined_pain_variables,outcome = "mean_pain_rest",exclusion_criteria = 0.157)
+pain_final_model <- predictionmodel
+
+
+#### Export results ----
+summary_of_models <- data.table("model" = c("NRS - QST",
+                                            "NRS - Psychological ",
+                                            "NRS - Demografics",
+                                            "NRS - Perioperative",
+                                            "NRS - Tumour",
+                                            "NRS - QST Condensed",
+                                            "NRS - Psychological Condensed",
+                                            "NRS - Demografics Condensed",
+                                            "NRS - Perioperative Condensed",
+                                            "NRS - Tumour Condensed",
+                                            "NRS - Combined",
+                                            "NRS - Final"))
+
+summary_of_models$multiR <- c(summary(model_nrs_qst)$r.squared, 
+                              summary(model_nrs_psychological)$r.squared, 
+                              summary(model_nrs_demographic)$r.squared, 
+                              summary(model_nrs_perioperative)$r.squared, 
+                              summary(model_nrs_tumour)$r.squared,
+                              summary(pain_qst_single_model)$r.squared, 
+                              summary(pain_psychological_single_model)$r.squared, 
+                              summary(pain_demographic_single_model)$r.squared, 
+                              summary(pain_perioperative_single_model)$r.squared, 
+                              summary(pain_tumour_single_model)$r.squared,
+                              summary(pain_combined)$r.squared, 
+                              summary(pain_final_model)$r.squared)
+
+summary_of_models$adjR <- c(summary(model_nrs_qst)$adj.r.squared, 
+                            summary(model_nrs_psychological)$adj.r.squared, 
+                            summary(model_nrs_demographic)$adj.r.squared, 
+                            summary(model_nrs_perioperative)$adj.r.squared, 
+                            summary(model_nrs_tumour)$adj.r.squared,
+                            summary(pain_qst_single_model)$adj.r.squared, 
+                            summary(pain_psychological_single_model)$adj.r.squared, 
+                            summary(pain_demographic_single_model)$adj.r.squared, 
+                            summary(pain_perioperative_single_model)$adj.r.squared, 
+                            summary(pain_tumour_single_model)$adj.r.squared,
+                            summary(pain_combined)$adj.r.squared, 
+                            summary(pain_final_model)$adj.r.squared)
+
+all_models_nrs <- list("Uncondensed" = rbind(tidy(model_nrs_qst),
+                                             tidy(model_nrs_psychological), 
+                                             tidy(model_nrs_demographic), 
+                                             tidy(model_nrs_perioperative),   
+                                             tidy(model_nrs_tumour)),
+                       "Condensed" = rbind(tidy(pain_qst_single_model), 
+                                           tidy(pain_psychological_single_model), 
+                                           tidy(pain_demographic_single_model), 
+                                           tidy(pain_perioperative_single_model), 
+                                           tidy(pain_tumour_single_model)),
+                       "Combined" = tidy(pain_combined),
+                       "Final" = tidy(pain_final_model),
+                       "Summaries" = summary_of_models)
+write_xlsx(all_models_nrs, "NRS.xlsx")
+
+
+
+
+### Opioid ----
+#### Single-domain models ----
+opioid_qst <-            lm(as.formula(paste("opioid_kg ~ ",paste(qst_variables, collapse ="+"),sep = "")), data = patientdata[!is.na(patientdata$opioid_kg)],na.action = na.exclude)
+opioid_psychological <-  lm(as.formula(paste("opioid_kg ~ ",paste(psychological_variables, collapse ="+"),sep = "")), data = patientdata[!is.na(patientdata$opioid_kg)],na.action = na.exclude)
+opioid_demographic <-    lm(as.formula(paste("opioid_kg ~ ",paste(demographics_variables, collapse = "+"),sep = "")), data = patientdata[!is.na(patientdata$opioid_kg)],na.action = na.exclude)
+opioid_perioperative <-  lm(as.formula(paste("opioid_kg ~ ",paste(perioperative_variables, collapse = "+"),sep = "")), data = patientdata[!is.na(patientdata$opioid_kg)],na.action = na.exclude)
+opioid_tumour <-         lm(as.formula(paste("opioid_kg ~ ",paste(tumour_variables, collapse = "+"),sep = "")), data = patientdata[!is.na(patientdata$opioid_kg)],na.action = na.exclude)
+
+#### Condensed single-domain models ----
+opioid_qst_condensed <- elimination(data = patientdata,vector_of_predictors = qst_variables,outcome = "opioid_kg",exclusion_criteria = 0.157)
+opioid_qst_condensed_model <- predictionmodel
+opioid_psychological_condensed <- elimination(data = patientdata,vector_of_predictors = psychological_variables,outcome = "opioid_kg",exclusion_criteria = 0.157)
+opioid_psychological_condensed_model <- predictionmodel
+opioid_demographic_condensed <- elimination(data = patientdata,vector_of_predictors = demographics_variables,outcome = "opioid_kg",exclusion_criteria = 0.157)
+opioid_demographic_condensed_model <- predictionmodel
+opioid_perioperative_condensed <- elimination(data = patientdata,vector_of_predictors = perioperative_variables,outcome = "opioid_kg",exclusion_criteria = 0.157)
+opioid_perioperative_condensed_model <- predictionmodel
+opioid_tumour_condensed <- elimination(data = patientdata,vector_of_predictors = tumour_variables,outcome = "opioid_kg",exclusion_criteria = 0.157)
+opioid_tumour_condensed_model <- predictionmodel
+
+#### Combined model ----
+opioid_qst_variables_condensed <- all.vars(formula(opioid_qst_condensed_model))[2:10]
+opioid_psychological_variables_condensed <- all.vars(formula(opioid_psychological_condensed_model))[2:10]
+opioid_demographics_variables_condensed <- all.vars(formula(opioid_demographic_condensed_model))[2:10]
+opioid_perioperative_variables_condensed <- all.vars(formula(opioid_perioperative_condensed_model))[2:10]
+opioid_tumour_variables_condensed <- all.vars(formula(opioid_tumour_condensed_model))[2:10]
+
+combined_opioid_variables <- na.omit(c(opioid_qst_variables_condensed,
+                                     opioid_psychological_variables_condensed,
+                                     opioid_demographics_variables_condensed,
+                                     opioid_perioperative_variables_condensed,
+                                     opioid_tumour_variables_condensed))
+
+opioid_combined <- lm(as.formula(paste("opioid_kg ~ ",paste(combined_opioid_variables, collapse ="+"),sep = "")), data = patientdata[!is.na(patientdata$opioid_kg)],na.action = na.exclude)
+
+#### Final model ----
+opioid_final <- elimination(data = patientdata,vector_of_predictors = combined_opioid_variables,outcome = "opioid_kg",exclusion_criteria = 0.157)
+opioid_final_model <- predictionmodel
+
+
+#### Export results ----
+summary_of_models <- data.table("model" = c("Opioid - QST", "Opioid - Psychological ", "Opioid - Demografics", "Opioid - Perioperative", "Opioid - Tumour",
+                                            "Opioid - QST Condensed", "Opioid - Psychological Condensed","Opioid - Demografics Condensed","Opioid - Perioperative Condensed","Opioid - Tumour Condensed",
+                                            "Opioid - Combined",
+                                            "Opioid - Final"))
+summary_of_models$multiR <- c(summary(opioid_qst)$r.squared, 
+                              summary(opioid_psychological)$r.squared, 
+                              summary(opioid_demographic)$r.squared, 
+                              summary(opioid_perioperative)$r.squared, 
+                              summary(opioid_tumour)$r.squared,
+                              summary(opioid_qst_condensed_model)$r.squared, 
+                              summary(opioid_psychological_condensed_model)$r.squared, 
+                              summary(opioid_demographic_condensed_model)$r.squared, 
+                              summary(opioid_perioperative_condensed_model)$r.squared, 
+                              summary(opioid_tumour_condensed_model)$r.squared,
+                              summary(opioid_combined)$r.squared, 
+                              summary(opioid_final_model)$r.squared)
+summary_of_models$adjR <- c(summary(opioid_qst)$adj.r.squared, 
+                            summary(opioid_psychological)$adj.r.squared, 
+                            summary(opioid_demographic)$adj.r.squared, 
+                            summary(opioid_perioperative)$adj.r.squared, 
+                            summary(opioid_tumour)$adj.r.squared,
+                            summary(opioid_qst_condensed_model)$adj.r.squared, 
+                            summary(opioid_psychological_condensed_model)$adj.r.squared, 
+                            summary(opioid_demographic_condensed_model)$adj.r.squared, 
+                            summary(opioid_perioperative_condensed_model)$adj.r.squared, 
+                            summary(opioid_tumour_condensed_model)$adj.r.squared,
+                            summary(opioid_combined)$adj.r.squared, 
+                            summary(opioid_final_model)$adj.r.squared)
+
+all_models_opioid <- list("Uncondensed" = rbind(tidy(opioid_qst),
+                                             tidy(opioid_psychological), 
+                                             tidy(opioid_demographic), 
+                                             tidy(opioid_perioperative),   
+                                             tidy(opioid_tumour)),
+                       "Condensed" = rbind(tidy(opioid_qst_condensed_model), 
+                                           tidy(opioid_psychological_condensed_model), 
+                                           tidy(opioid_demographic_condensed_model), 
+                                           tidy(opioid_perioperative_condensed_model), 
+                                           tidy(opioid_tumour_condensed_model)),
+                       "Combined" = tidy(opioid_combined),
+                       "Final" = tidy(opioid_final_model),
+                       "Summaries" = summary_of_models)
+write_xlsx(all_models_opioid, "Opioid.xlsx")
