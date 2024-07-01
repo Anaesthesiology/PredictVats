@@ -1,0 +1,168 @@
+#Load libraries ----
+# NB: read about packages on google, github, cran etc.
+library(REDCapR) #Used to pull data directly from redCAP
+library(tidyverse) #for tidyer data handling. 
+library(extrafont) #to get avenir font. 
+library(grid) #to place boxes in a grid and draw lines between them. 
+library(Gmisc) #to make the boxes
+library(glue) #to append calculated numbers in strings 
+
+# Load data ----
+#Two different databases were used, one for screening participants and one with the included participants.
+flowchartdata <- redcap_read(redcap_uri  = "https://redcap.rn.dk/api/",token = "TOKEN FROM REDCAP")$data
+includedpatientdata <- redcap_read(redcap_uri  = "https://redcap.rn.dk/api/",token = "TOKEN FROM REDCAP")$data
+
+# Calculate the number of participants for each part of the flow diagram ----
+#patients unable to participate ----
+practicality <- flowchartdata[flowchartdata$status == 3,] #Subsets participants who were screened but not included due to parcticalities, i.e., no investigators available to inlcude the participant. 
+noncancer <- flowchartdata[flowchartdata$status == 0,] #Subsets participants who were screened, but not included due to their surgery not being because of cancer
+uneligible <- rbind(practicality,noncancer) #Combines the two dataframes of uneligable patients. 
+
+#Eligible patients----
+eligible_pt <- flowchartdata %>% anti_join(uneligible) #Removes the uneligeble participants from all screened to only have the participants that were eligeble.
+
+#Preoperative excluded. Subsets all the different reasons to be excluded before surgery. 
+consent <- eligible_pt[eligible_pt$status == 4,] #Participants which did not consent
+epi_pre <- eligible_pt[eligible_pt$status == 2 & eligible_pt$eksklusion == 4,] #Participants who were excluded because they had an preoperative planned epidural prior to consent (exclusion reason #4)
+thoraxpain <- eligible_pt[eligible_pt$eksklusion == 2,] #Participants with preoperative chronic pain in the thorax (exclusion reason #2).
+information <- eligible_pt[eligible_pt$eksklusion == 1,] #Participants who did not understand written and spoken Danish (exclusion reason #1). 
+allodynia <- eligible_pt[eligible_pt$eksklusion == 6,] #Participants who reported significant allodynia in the lower legs and could not partake in QST (exclusion reason #6).
+preop_excluded <- rbind(consent,epi_pre,thoraxpain,information,allodynia) #All of the above participants. 
+
+#Patients included in the study----
+included_pt <- eligible_pt %>% anti_join(preop_excluded) #All participants which were included. Found be removing preoperative excluded patients from all eligible. 
+
+#post-inclusion exclusion. Subsets all the different reasons for exclusion after participants consented
+epi_post <- included_pt[included_pt$status == 5,] #all participants who had an epidural planned between consent and surgery. 
+opensurgery <- included_pt[included_pt$status == 6,] #all participants who were converted from VATS to open surgery. 
+postponed <- included_pt[included_pt$status == 12,] #all participants whose surgery was postponed until after the project were finnished. 
+
+postconsent_excluded <- rbind(epi_post,opensurgery,postponed) #Combined all participants who were excluded after consent.
+
+#Final population----
+analysed <- included_pt %>% anti_join(postconsent_excluded) # The final number of analysed participants is calculated by subtracting the post-consent excluded participants from the included participants.
+
+#Test if it is the correct patient that are left ---- 
+analysedpatients <- includedpatientdata[includedpatientdata$exclusion___0 == 1,] #Gather the participants which have been analysed in the statistics script.
+cprtest <- data.frame(sort(analysedpatients$cpr),sort(analysed$cpr)) #Combine social security numbers of those actually analysed with those found to be analysed in the screening log
+cprtest$same <- ifelse(cprtest$sort.analysedpatients.cpr. == cprtest$sort.analysed.cpr.,0,1) #Compare if it is the same social security numbers, and if there is any mismatch, output 1
+max(cprtest$same) #The highest number is 0. Hence, no mismatch between the data repository and the screeningslog. 
+
+# Plot the flowchart ----
+##Get avenir font ----
+font_import() #imports all fonts available on the pc. avenir should be downloaded as .ttf file beforehand.
+
+## A pdf export is prepped ----
+pdf("flowchart.pdf", width = 5, height = 5)
+grid.newpage()
+
+##Font layouts of the flowchart are set ----
+leftgp <- gpar(fontsize = 11, fontfamily = "Avenir LT Pro 45 Book") #The boxes for the included participants are slightly larger in font 
+rightgp <- gpar(fontsize = 10, fontfamily = "Avenir LT Pro 45 Book") 
+
+## Boxes are defined ----
+# All boxes are made in the same way.
+allpt_box <- boxGrob(glue("Screened", #Glue puts together the two lines in the boc. 
+                           "n = {pop}",
+                           pop = txtInt(nrow(flowchartdata)), #pop counts how many rows are in the dataframe matching the box
+                          .sep = "\n"),
+                     txt_gp = leftgp, 
+                     width = 0.2)
+eligible_box <- boxGrob(glue("Eligble",
+                      "n = {pop}",
+                      pop = txtInt(nrow(eligible_pt)),
+                      .sep = "\n"),
+                      txt_gp = leftgp,
+                      width = 0.2)
+included_box <- boxGrob(glue("Included",
+                            "n = {pop}",
+                            pop = txtInt(nrow(included_pt)),
+                            .sep = "\n"),
+                        txt_gp = leftgp,
+                        width = 0.2)
+analysed_box <- boxGrob(glue("Analysed",
+                             "n = {pop}",
+                             pop = txtInt(nrow(analysed)),
+                             .sep = "\n"),
+                        txt_gp = leftgp,
+                        width = 0.2)
+uneligible_box <- boxGrob(glue("Ineligible (n = {tot}):",
+                         " - Practicalities: {practicalityn}",
+                         " - VATS not due to cancer: {noncancern}",
+                         tot = nrow(uneligible),
+                         noncancern = nrow(noncancer),
+                         practicalityn = nrow(practicality),
+                         .sep = "\n"),
+                         txt_gp = rightgp,
+                    just = "left")
+
+excluded1 <- boxGrob(glue("Preoperative excluded (n = {tot}):",
+                         " - Did not consent: {consen}",
+                         " - Preoperative planned epidural: {epidu}",
+                         " - Chronic thoracic pain: {pain}",
+                         " - Did not understand Danish: {inform}",
+                         " - Allodynia in the lower legs: {allodyn}",
+                         tot = nrow(preop_excluded),
+                         consen = nrow(consent),
+                         epidu = nrow(epi_pre),
+                         pain = nrow(thoraxpain),
+                         inform = nrow(information),
+                         allodyn = nrow(allodynia),
+                         .sep = "\n"),
+                     txt_gp = rightgp,
+                    just = "left")
+
+excluded2 <- boxGrob(glue("Excluded after consent (n = {tot}):",
+                          " - Conversion to open surgery: {converted}",
+                          " - Preoperative planned epidural: {epidu}",
+                          " - Surgery postponed: {postpon}",
+                          tot = nrow(postconsent_excluded),
+                          epidu = nrow(epi_post),
+                          converted = nrow(opensurgery),
+                          postpon = nrow(postponed),
+                          .sep = "\n"),
+                     txt_gp = rightgp,
+                     just = "left")
+#The left boxes are positioned at 30% of the width of the page. Y-axis is changed afterwards
+allpt_box <- moveBox(allpt_box, x = .3, y = 1)
+eligible_box <- moveBox(eligible_box, x = .3, y = 1) 
+included_box <- moveBox(included_box, x = .3, y = 1)
+analysed_box <- moveBox(analysed_box, x = .3, y = 1)
+
+#The left boxes are spread vertically
+vert <- spreadVertical(allpt_box = allpt_box,
+                       eligible_box = eligible_box,
+                       included_box = included_box,
+                       analysed_box = analysed_box,
+                       .type = "center")
+#The exclusion boxes are positioned at 70% of the width of the page and between the two correspondent boxes on the left. 
+uneligible_box <- moveBox(uneligible_box,
+                    x = .7,
+                    y = coords(vert$eligible_box)$y + distance(vert$allpt_box, vert$eligible_box, half = TRUE, center = TRUE))
+
+excluded1 <- moveBox(excluded1,
+                    x = .7,
+                    y = coords(vert$included_box)$y + distance(vert$eligible_box, vert$included_box, half = TRUE, center = TRUE))
+
+excluded2 <- moveBox(excluded2,
+                     x = .7,
+                     y = coords(vert$analysed_box)$y + distance(vert$included_box, vert$analysed_box, half = TRUE, center = TRUE))
+
+#Each of the boxes on the left are connected
+for (i in 1:(length(vert) - 1)) {
+  connectGrob(vert[[i]], vert[[i + 1]], type = "vert") %>%
+    print
+}
+
+#The exclusion boxes are connected with "L"-shaped arrows. 
+connectGrob(vert$allpt_box, uneligible_box, type = "L")
+connectGrob(vert$eligible_box, excluded1, type = "L")
+connectGrob(vert$included_box, excluded2, type = "L")
+
+#All the boxes are printed
+vert
+uneligible_box
+excluded1
+excluded2
+
+dev.off()
