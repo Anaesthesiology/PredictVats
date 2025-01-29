@@ -185,7 +185,7 @@ for (i in 1:nrow(patientdata)) {
     time = c(0, time1, time2, time3, time4, time5, time6, 100),
     score = c(0, patientdata$nrs_rest_1[i],patientdata$nrs_rest_2[i],patientdata$nrs_rest_3[i],patientdata$nrs_rest_4[i],patientdata$nrs_rest_5[i],0,0)
   ) #The patients are assumed to be pain free upon discharge. 
-  auc <- AUC(x = auc_df$time, y = auc_df$score, na.rm = TRUE, to = 2 )
+  auc <- AUC(x = auc_df$time, y = auc_df$score, na.rm = TRUE, to = 2 )/2
   patientdata$mean_pain_rest[i] <- ifelse(all(is.na(auc_df$score[2:6])) ,NA,auc)
 }
 
